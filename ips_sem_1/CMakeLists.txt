@@ -1,0 +1,2 @@
+add_executable(mmult_serial_1.exe mmult_serial.cpp)
+add_executable(mmult_serial_annotated.exe mmult_serial_annotated.cpp)

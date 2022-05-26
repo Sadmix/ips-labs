@@ -1,0 +1,2 @@
+add_executable(ips_sem_3_serial mmult_serial.cpp)
+add_executable(ips_sem_3_omp mmult_omp.cpp)

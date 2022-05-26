@@ -1,0 +1,95 @@
+#include <time_measure.h>
+#include <advisor-annotate.h>
+
+// integral function with threads
+double integral_threads(std::function<double(double)> f, double A, double B, int n)
+{
+	auto thread_num = 4;
+	auto h = abs(B - A) / n;
+	n /= thread_num;
+	double* sums = new double[thread_num];
+	double sum = 0;
+
+	std::thread* threads = new std::thread[thread_num];
+
+	for (int i = 0; i < thread_num; i++)
+	{
+		sums[i] = 0;
+		threads[i] = std::thread([&sums, i, A, h, n, f](){
+            ANNOTATE_SITE_BEGIN(square_loop)
+			for (int j = n * i; j < n * (i + 1); j++)
+			{
+                ANNOTATE_TASK_BEGIN(square_task)
+				double x = A + h * j;
+				sums[i] += f(x + h/2);
+                ANNOTATE_TASK_END(square_task)
+			}
+            ANNOTATE_SITE_END(square_loop)
+		});
+		threads[i].join();
+	}
+
+	for (int i = 0; i < thread_num; i++)
+	{
+		sum += sums[i];
+	}
+	auto i = h * sum;
+	return i;
+}
+
+int main(int argc, char const *argv[])
+{
+    int max_power = 5;
+
+	std::vector<double> time_results(max_power, 0);
+	std::vector<double> val_results(max_power, 0);
+	std::vector<int> n(max_power, 0);
+
+    std::cout << "[TASK 4] : Threads" << std::endl;
+
+	for (int j = 0; j < 5; j++)
+	{
+		n[j] = 100 * pow(10, j);
+		time_measure(integral_threads, func, 0, 1, n[j], val_results[j], time_results[j]);
+	}
+	
+	std::cout
+		<< std::left
+		<< std::setw(10)
+		<< "N"
+		<< std::left
+		<< std::setw(20)
+		<< "Result"
+		<< std::left
+		<< std::setw(20)
+		<< "Epsilon"
+		<< std::left
+		<< std::setw(20)
+		<< "Elapsed time (s)"
+		<< std::endl;
+
+	for (int j = 0; j < 5; j++)
+	{
+		std::cout
+			<< std::left
+			<< std::setw(10)
+			<< std::setprecision(0)
+			<< std::scientific
+			<< double(n[j])
+			<< std::fixed
+			<< std::setprecision(15)
+			<< std::left
+			<< std::setw(20)
+			<< val_results[j]
+			<< std::left
+			<< std::setw(20)
+			<< abs(ANALYTIC_INTEGRAL - val_results[j])
+			<< std::left
+			<< std::setw(20)
+			<< time_results[j]
+			<< std::endl;
+	}
+	std::cout << std::endl;
+
+    return 0;
+}
